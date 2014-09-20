@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+    <title>BogotáVerde</title>
+    <style>
+        body {background-color: black;}
+    </style>
+    <script>
+        var endURL = window.location.href.substr(window.location.href.lastIndexOf("/"));
+
+        if (endURL.indexOf("/?") == 0) {
+            window.location = window.location.href.replace("/?", "/main.html?");
+        } else {
+            if (endURL.indexOf("/index.html") == 0) {
+                window.location = window.location.href.replace("/index.html", "/main.html");
+            } else {
+                window.location = './main.html';
+            };
+        };
+   </script>
+</head>
+<body>
+
+</body>
+</html>

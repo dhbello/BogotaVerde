@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>BogotáVerde</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <link href="css/jquery.mobile-1.4.4.min.css" rel="stylesheet" />
+    <link href="css/jquery.mobile.structure-1.4.4.min.css" rel="stylesheet" />
+    <link href="css/jquery.mobile.theme-1.4.4.min.css" rel="stylesheet" />
+
+	<script src="js/jquery-2.1.1.min.js"></script>
+    <script src="js/jquery.mobile-1.4.4.min.js"></script>
+
+    <script src="phonegap.js"></script>
+    <script src="index.js"></script>
+    <!--
+    <script src="js/3.6compact/init.js"></script>
+    <link rel="stylesheet" href="js/3.6compact/js/dojo/dijit/themes/claro/claro.css" />
+    <link rel="stylesheet" href="js/3.6compact/js/esri/css/esri.css"/>
+    -->
+    
+    <link rel="stylesheet" href="http://js.arcgis.com/3.6compact/js/dojo/dijit/themes/claro/claro.css" />
+    <link rel="stylesheet" href="http://js.arcgis.com/3.6compact/js/esri/css/esri.css" />
+    <script src="http://js.arcgis.com/3.6compact/"></script> 
+
+
+    <style>
+        .simpleInfoWindow .close
+        {
+            display: none;
+        }
+
+        .ui-popup-screen.in {
+            background: none repeat scroll 0 0 grey;
+            opacity: 0.5;
+            z-index: 100;
+        }
+
+        body
+        {
+            width: 100%;
+            height: 100%;
+        }
+
+    </style>
+
+	<script>
+
+	    if (isPhoneGapExclusive()) {
+	        document.addEventListener("deviceready", onDeviceReady, false);
+	        window.addEventListener('resize', updateSize);
+
+	        function onDeviceReady() {
+	            navigator.geolocation.getCurrentPosition(zoomToLocation, null);
+	            try {
+	                dojo.require("esri.map");
+	                dojo.require("esri.graphic");
+	                dojo.require("esri.tasks.geometry");
+	                dojo.require("esri.tasks.identify");
+	                dojo.require("esri.dijit.InfoWindowLite");
+	                dojo.addOnLoad(init);
+	            } catch (err) {
+	                init();
+	            };
+	        }
+	    } else {
+	        window.addEventListener('resize', updateSize);
+
+	        navigator.geolocation.getCurrentPosition(zoomToLocation, null);
+	        try {
+	            dojo.require("esri.map");
+	            dojo.require("esri.graphic");
+	            dojo.require("esri.tasks.geometry");
+	            dojo.require("esri.tasks.identify");
+	            dojo.require("esri.dijit.InfoWindowLite");
+	            dojo.addOnLoad(init);
+	        } catch (err) {
+	            init();
+	        };
+	    };
+
+    </script>
+
+ </head>
+<body>
+
+    <div data-role="page" id="main" style="width:100%; height:100%; padding:0;">
+
+	    <div id="header" data-role="header">
+            <a href="#" data-role="button" data-icon="star" onclick="displayLista();">Resultados</a>
+            <h1>&nbsp;</h1>
+            <div class="ui-btn-right" data-role="controlgroup" data-type="horizontal">
+                <a href="#" class="ui-btn ui-icon-alert ui-btn-icon-notext ui-corner-all" onclick="$('#reportar').popup('open');initReporte();">Reportar</a>
+                <a href="#" class="ui-btn ui-icon-gear ui-btn-icon-notext ui-corner-all" onclick="$('#configuracion').popup('open');">Configuración</a>
+                <a href="#" class="ui-btn ui-icon-info ui-btn-icon-notext ui-corner-all" onclick="$('#acerca').popup('open');">Acerca</a>
+            </div>
+	    </div><!-- /header -->
+
+
+	    <div id="container" data-role="content" style="width:100%; height:100%; padding:0;">
+
+
+            <div data-role="popup" id="acerca" data-history="false">
+	            <div data-role="header">
+                    <a href="#main" data-role="button" data-icon="arrow-l">Volver</a>
+		            <h1>Bogot&aacute;Verde</h1>
+	            </div>
+	            <div data-role="content">
+                   <p style="text-align: center;">
+                       <span style="font-size: large;"><b>Bogot&aacute;Verde v1.0</b></span>
+                       <br />
+                       2014
+                   </p>
+		            <p style="text-align: center;">
+                        
+                    </p>
+                   <p style="text-align: center;">
+                        <b>Desarrollado por:</b><br />
+                        David H. Bello<br />
+                        david.bello@sinesat.com
+                   </p>
+	            </div>
+            </div>
+            
+            <div data-role="popup" id="configuracion" data-history="false">
+	            <div data-role="header">
+                    <a href="#main" data-role="button" data-icon="arrow-l">Volver</a>
+		            <h1>Bogot&aacute;Verde</h1>
+	            </div>
+	            <div data-role="content">
+                   <p style="text-align: center;">Radio de b&uacute;squeda:</p>
+                    <div data-role="controlgroup" data-type="horizontal">
+                        <a href="#" id="btn1" data-role="button" data-inline="true" data-mini="true" onclick="$('#btn1,#btn2,#btn4').removeClass('ui-btn-active');updateRadius(0.5);$('#btn1').addClass('ui-btn-active');">500 Mts.</a>
+                        <a href="#" id="btn2" data-role="button" data-inline="true" data-mini="true" onclick="$('#btn1,#btn2,#btn4').removeClass('ui-btn-active');updateRadius(1);$('#btn2').addClass('ui-btn-active');" class="ui-btn-active">1 Km.</a>
+                        <a href="#" id="btn4" data-role="button" data-inline="true" data-mini="true" onclick="$('#btn1,#btn2,#btn4').removeClass('ui-btn-active');updateRadius(2);$('#btn4').addClass('ui-btn-active');">2 Kms.</a>
+                    </div>
+	            </div>
+            </div>
+
+            <div data-role="popup" id="msg" data-history="false">
+	            <div data-role="header">
+                    <a href="#main" data-role="button" data-icon="arrow-l">Volver</a>
+		            <h1>Bogot&aacute;Verde</h1>
+	            </div>
+	            <div data-role="content">
+                    <div id="msgTXT"></div>
+                </div>
+            </div>
+
+            <div data-role="popup" id="msg2" data-history="false">
+	            <div data-role="header">
+                    <a href="#" data-role="button" data-icon="arrow-l" onclick="$('#msg2').popup('close');$('#reportar').popup('open');">Volver</a>
+		            <h1>Bogot&aacute;Verde</h1>
+	            </div>
+	            <div data-role="content">
+                    <div id="msgTXT2"></div>
+                </div>
+            </div>
+
+            <div data-role="popup" id="reportar" data-history="false">
+	            <div data-role="header">
+                    <a href="#main" data-role="button" data-icon="arrow-l">Volver</a>
+		            <h1>Bogot&aacute;Verde</h1>
+	            </div>
+	            <div data-role="content">
+                    <div data-role="fieldcontain">
+                        <label for="fopcion" class="select">Tipo de Reporte:</label>
+                        <select id="fopcion">
+                            <option value="problema_fisico">Árbol en mal estado físico </option>
+                            <option value="problema_sanitario">Árbol en buen estado sanitario</option>
+                            <option value="falta_mantenimiento">Árbol sin mantenimiento</option>
+                            <option value="falta_riego">Árbol que le falta riego</option>
+                            <option value="arbol_muerto">Árbol muerto o seco</option>
+                            <option value="sitio_sin_arbol">Sitio sin árbol</option>
+                            <option value="zona_verde_apta">Zona verde apta para plantación</option>
+                        </select>
+                    </div>
+                    <textarea id="fdescripcion" rows="4" cols="25" placeholder="Descripci&oacute;n"></textarea>
+                    <div>
+                        <p id="ffield" style="text-align: center;">Foto: 0</p>
+                        <div id="fphoto">
+                            <div style="text-align: center;" data-role="controlgroup" data-type="horizontal">
+                                <a href="#" data-role="button" data-inline="true" data-mini="true" onclick="capture(Camera.PictureSourceType.SAVEDPHOTOALBUM);">Existente</a>
+                                <a href="#" data-role="button" data-inline="true" data-mini="true" onclick="capture(Camera.PictureSourceType.CAMERA);">Desde la camara</a>
+                            </div>
+                        </div>
+                        <div id="fphotoweb">
+                            <form id="photoweb">
+                                <input type="file" name="nva_imagen" id="nva_imagen" />
+                            </form>
+                            <button onclick="cargarFoto();">Cargar</button>
+                        </div>
+                    </div>
+                    <input type="text" id="fnombre" placeholder="Nombre" />
+                    <input type="text" id="ftelefono" placeholder="Tel&eacute;fono" />
+                    <input type="text" id="fcorreo" placeholder="Correo electr&oacute;nico" />
+                    <a href="#" data-role="button" onclick="enviar_msg();">Enviar</a>
+	            </div>
+            </div>
+
+
+            <div data-role="popup" id="popupGeneral" data-history="false">
+			        <div data-role="header">
+				        <h1>Bogot&aacute;Verde</h1>
+			        </div>
+			        <div data-role="content">
+				        <p>Escoja un punto en el mapa y haga un doble tap para ver la informaci&oacute;n del sitio.</p><br />
+				        <a href="#main" data-role="button">Continuar</a>
+			        </div>
+		    </div>
+             <div id="map" style="padding: 0px;width:100%;height:100%;">
+
+		    </div>     
+	    </div>
+
+        <div id="footer" data-role="footer" data-position="fixed"> 
+
+	         <div id="lista" style="font-size: small;position: absolute;width:100%;bottom:0px;padding: 0;overflow:auto;z-index:100;display:none;text-shadow:none;color:gray;">
+                <table id="table" style="width:100%;border-collapse: collapse;">
+
+
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
