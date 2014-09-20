@@ -44,6 +44,15 @@
             height: 100%;
         }
 
+        .lineaTR {
+            background-image: url("images/BGTable.png");
+            border-top: 2px solid white;
+            border-bottom: 1px solid white;
+            background-size: contain;
+            background-repeat: repeat-x;
+            height: 30px;
+        }
+
     </style>
 
 	<script>
@@ -57,6 +66,7 @@
 	            try {
 	                dojo.require("esri.map");
 	                dojo.require("esri.graphic");
+	                dojo.require("esri.arcgis.utils");
 	                dojo.require("esri.tasks.geometry");
 	                dojo.require("esri.tasks.identify");
 	                dojo.require("esri.dijit.InfoWindowLite");
@@ -72,6 +82,7 @@
 	        try {
 	            dojo.require("esri.map");
 	            dojo.require("esri.graphic");
+	            dojo.require("esri.arcgis.utils");
 	            dojo.require("esri.tasks.geometry");
 	            dojo.require("esri.tasks.identify");
 	            dojo.require("esri.dijit.InfoWindowLite");
@@ -169,12 +180,13 @@
                         <label for="fopcion" class="select">Tipo de Reporte:</label>
                         <select id="fopcion">
                             <option value="problema_fisico">Árbol en mal estado físico </option>
-                            <option value="problema_sanitario">Árbol en buen estado sanitario</option>
+                            <option value="problema_sanitario">Árbol en mal estado sanitario</option>
                             <option value="falta_mantenimiento">Árbol sin mantenimiento</option>
                             <option value="falta_riego">Árbol que le falta riego</option>
                             <option value="arbol_muerto">Árbol muerto o seco</option>
                             <option value="sitio_sin_arbol">Sitio sin árbol</option>
                             <option value="zona_verde_apta">Zona verde apta para plantación</option>
+                            <option value="sin_censo">Árbol no censado</option>
                         </select>
                     </div>
                     <textarea id="fdescripcion" rows="4" cols="25" placeholder="Descripci&oacute;n"></textarea>
@@ -222,6 +234,29 @@
 
 
                 </table>
+            </div>
+        </div>
+
+        <div data-role="popup" id="info" data-history="false">
+            <div data-role="header">
+                <a href="#main" data-role="button" data-icon="arrow-l">Volver</a>
+                <h1>Bogot&aacute;Verde</h1>
+            </div>
+            <div id="info_content" data-role="content">
+                <ul data-role="listview" data-inset="true">
+                    <li data-role="list-divider">Nombre</li>
+                    <li>
+                        <h2 id="info_nombre" style="white-space: normal;"></h2>
+                    </li>
+                    <li data-role="list-divider">Descripci&oacute;n</li>
+                    <li>
+                        <p id="info_descripcion" style="white-space: normal;"></p>
+                    </li>
+                    <li data-role="list-divider">Fotos<span id="info_fotos_count" class="ui-li-count"></span></li>
+                    <li>
+                        <div id="info_fotos"></div>
+                    </li>
+                </ul>
             </div>
         </div>
 

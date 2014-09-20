@@ -4,10 +4,11 @@ PARAMETROS CONFIGURABLES
 
 */
 // Web service empleado para cargar fotos por parte de los usuarios
-var _url_photo = 'Reporte.ashx?cmd=cargar_imagen';
+var _url_photo = 'http://bogotaverde.azurewebsites.net/Reporte.ashx?cmd=cargar_imagen';
 // Web service empleado para realizar el reporte 
-var _url_msg = 'Reporte.ashx?cmd=crear_reporte';
-var _freebase_url = 'Reporte.ashx?cmd=freebase'
+var _url_msg = 'http://bogotaverde.azurewebsites.net/Reporte.ashx?cmd=crear_reporte';
+var _freebase_url = 'http://bogotaverde.azurewebsites.net/Reporte.ashx?cmd=freebase';
+var _freebase_ur_topic = 'http://bogotaverde.azurewebsites.net/Reporte.ashx?cmd=freebase_topic';
 var _proxy_url = 'http://idecabogota.appspot.com/tmp.jsp';
 var _geometry_url = 'http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer';
 var _map_url = 'http://imagenes.catastrobogota.gov.co/arcgis/rest/services/CM/CommunityMap/MapServer';
@@ -30,13 +31,16 @@ var bufferCache;
 var mapLock = false;
 var photoURLS = new Array();
 
-var pLat = 4.598056;
-var pLng = -74.075833;
+var pLat = 4.595243019951048;
+var pLng = -74.10301862877772;
 
 var currentExtent;
 var currentPoint;
 var pressTimer;
 var evtParams;
+
+var tipos;
+var cache_data;
 
 function init() {
 
@@ -53,6 +57,7 @@ function init() {
                 $('#acerca').popup('close');
                 $('#msg').popup('close');
                 $('#msg2').popup('close');
+                $('#info').popup('close');
                 $('#popupGeneral').popup('close');
             } else {
                 navigator.app.exitApp();
@@ -116,7 +121,7 @@ function displayLista() {
 
 function updateSize() {
     if ($("#lista").is(":visible")) {
-        $("#lista").height(parseInt($(document).height() * 0.2));
+        $("#lista").height(parseInt($(document).height() * 0.3));
     } else {
         $("#lista").height(0);
     };
@@ -223,7 +228,7 @@ function mapClickHandler(evt) {
     params1.outSpatialReference = map.spatialReference;
 
     gsvc.buffer(params1, showBuffer2);
-    setTimeout(function () { mapLock = false; }, 4000);
+    setTimeout(function () { mapLock = false; }, 4000);    
 };
 
 function showBuffer(geometries) {
@@ -279,21 +284,26 @@ function orientationChanged() {
 }
 
 function showResults(results) {
-    var tipos = [];
+    tipos = [];
 
     for (var i = 0, il = results.length; i < il; i++) {
         var value = "N/A";
         var content = "";
 
         try {
-            value = "Árbol";
-            content = results[i].feature.attributes["Nombre"];
-            if (i % 2 == 0) {
-                tipos.push("abatia parviflora");
-            } else {
-                tipos.push("abelia sp");
+            if (i % 3 == 0) {
+                value = "abatia parviflora";
+            };
+            if (i % 3 == 1) {
+                value = "abelia sp";
+            };
+            if (i % 3 == 2) {
+                value = "pinus sylvestris";
             };
 
+            results[i].feature.attributes["Nombre_Esp"] = value;
+            tipos.push(value);
+            content = value;
         } catch (e) {
             alert(e);
         };
@@ -310,7 +320,7 @@ function showResults(results) {
         switch (results[i].feature.geometry.type) {
             case "point":
                 capa.add(new esri.Graphic(results[i].feature.geometry,
-                                                new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 13,
+                                                new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 5,
                                                                                new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(color_capa), 2),
                                                                                new dojo.Color(color_capa)),
                                                 results[i].feature.attributes,
@@ -353,41 +363,162 @@ function showResults(results) {
                 break;
         }
     }
-    tipos = tipos.filter(function (v, i, a) { return a.indexOf(v) == i });
-    $("#table").html("");
-    var strHTML = "";
-    var params = "";
-    for (var j = 0; j < tipos.length; j++) {
-        strHTML = strHTML + "<tr id='linea-" + j + "'>";
-        strHTML = strHTML + "<td>";
-        strHTML = strHTML + "</td>";
-        strHTML = strHTML + "<td>";
-        strHTML = strHTML + tipos[j];
-        strHTML = strHTML + "</td>";
-        strHTML = strHTML + "<td id='linea-" + j + "-l'>";
-        strHTML = strHTML + "</td>";
-        strHTML = strHTML + "</tr>";
-        params = params + tipos[j] + ",";
-    };
-    $("#table").html(strHTML);
+    showEntidades();
+    
+
+};
+
+function showEntidades() {
     $.ajax({
-        url: _freebase_url + "&params=" + params,
-        type: 'POST',
-        dataType: 'text',
+        url: "http://www.arcgis.com/sharing/content/items/3d9aa61707a84d86aa9f61833e7e0d7b/data",
+        type: 'GET',
+        dataType: 'json',
         success: function (response) {
-            var data = response.split(",");
-            for (var k = 0; k < data.length; k++) {
-                if (data[k].length > 0) {
-                    $("#linea-" + k + "-l").html(data[k]);
+            tipos = [];
+
+            for (var i = 0, il = response.operationalLayers[0].featureCollection.layers[0].featureSet.features.length; i < il; i++) {
+                var _result = response.operationalLayers[0].featureCollection.layers[0].featureSet.features[i];
+                var value = "N/A";
+                var content = "";
+
+                try {
+                    value = _result.attributes["Nombre_Esp"];                    
+                    tipos.push(value);
+                    content = value;
+                } catch (e) {
+                    alert(e);
                 };
+                content = content + "<br /><a href='#' onclick='cerrarPopup();' style=''>Cerrar</a>";
+                var popcontent;
+                if (value.length > 40) {
+                    value = value.substr(0, 40) + "...";
+                }
+                if (value == "N/A") {
+                    popcontent = null;
+                } else {
+                    popcontent = new esri.InfoTemplate(value, content)
+                };
+                capa.add(new esri.Graphic(esri.geometry.webMercatorToGeographic(new esri.geometry.Point(_result.geometry.x, _result.geometry.y, new esri.SpatialReference({ wkid: 102100 }))),
+                                                         new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 5,
+                                                                                        new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(color_capa), 2),
+                                                                                        new dojo.Color(color_capa)),
+                                                         _result.attributes,
+                                                         popcontent
+                                         ));
+
+
+            }
+
+            var tcache = tipos;
+            tipos = tipos.filter(function (v, i, a) { return a.indexOf(v) == i }).sort();
+            $("#table").html("");
+            var strHTML = "";
+            var params = "";
+            for (var j = 0; j < tipos.length; j++) {
+                strHTML = strHTML + "<tr onclick='showLayer(" + j + ");'  id='linea-" + j + "' class='lineaTR'>";
+                strHTML = strHTML + "<td>";
+                strHTML = strHTML + count(tcache, tipos[j]);
+                strHTML = strHTML + "</td>";
+                strHTML = strHTML + "<td>";
+                strHTML = strHTML + tipos[j];
+                strHTML = strHTML + "</td>";
+                strHTML = strHTML + "<td id='linea-" + j + "-l' style='float: right;'>";
+                strHTML = strHTML + "</td>";
+                strHTML = strHTML + "</tr>";
+                params = params + tipos[j] + ",";
             };
+            $("#table").html(strHTML);
+            $.ajax({
+                url: _freebase_url + "&params=" + params,
+                type: 'POST',
+                dataType: 'text',
+                success: function (response) {
+                    cache_data = response.split(",");
+                    for (var k = 0; k < cache_data.length; k++) {
+                        if (cache_data[k].length > 0) {
+                            $("#linea-" + k + "-l").html('<a href="#" class="ui-btn ui-icon-info ui-btn-icon-notext  ui-corner-all" style="margin: 0px; padding: 0px;" onclick="showDetails(' + k + ');">Mas informaci&oacute;n</a>');
+                        };
+                    };
+                },
+                error: function (err) {
+                    alert('error');
+                }
+            });
+
+
         },
         error: function (err) {
             alert('error');
         }
     });
-
 };
+
+function showLayer(pos) {
+    for (var i = 0; i < capa.graphics.length; i++) {
+        var _color;
+        if (capa.graphics[i].attributes["Nombre_Esp"] == tipos[pos]) {
+            _color = new dojo.Color({ r: 255, g: 0, b: 0, a: 0.45 });
+        } else {
+            _color = new dojo.Color(color_capa);
+        };        
+        switch (capa.graphics[i].geometry.type) {
+            case "point":
+                capa.graphics[i].symbol = new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 5,
+                                                                               new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(_color), 2),
+                                                                               new dojo.Color(_color));
+                break;
+            case "multipoint":
+                capa.graphics[i].symbol = new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 10,
+                                                                               new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(_color), 2),
+                                                                               new dojo.Color(_color));
+                break;
+            case "polyline":
+                capa.graphics[i].symbol = new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(_color), 2);
+                break;
+            case "polygon":
+                capa.graphics[i].symbol = new esri.symbol.SimpleFillSymbol(esri.symbol.SimpleFillSymbol.STYLE_SOLID,
+                                                                              new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(_color), 2),
+                                                                               new dojo.Color(_color));
+                break;
+            case "extent":
+                capa.graphics[i].symbol = new esri.symbol.SimpleFillSymbol(esri.symbol.SimpleFillSymbol.STYLE_SOLID,
+                                                                              new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(_color), 2),
+                                                                               new dojo.Color(_color));
+                break;
+        }
+
+    };
+    capa.refresh();
+}
+
+function showDetails(pos) {
+    $.ajax({
+        url: _freebase_ur_topic + "&topic=" + cache_data[pos],
+        type: 'POST',
+        dataType: 'json',
+        success: function (response) {
+            $('#info_nombre').html(response.property["/type/object/name"].values[0].value);
+            $('#info_descripcion').html(response.property["/common/topic/description"].values[0].value);
+            var photoHTML = "";
+            var photoCount = 0;
+            try {
+                photoCount = response.property["/common/topic/image"].count;
+                for (var j = 0; j < response.property["/common/topic/image"].count; j++) {
+                    photoHTML = photoHTML + "<img src='https://usercontent.googleapis.com/freebase/v1/image" + response.property["/common/topic/image"].values[j].id + "' /><br />";
+                };
+            } catch (ex) {
+
+            }
+            $('#info_fotos_count').html(photoCount);            
+            $('#info_fotos').html(photoHTML);
+            $('#info').popup('open');
+        },
+        error: function (err) {
+            alert('error');
+        }
+    });
+   
+}
 
 function getCircle(center, radius) {
     var points = getPoints(center, radius);
@@ -468,9 +599,7 @@ function captureFail(message) {
     $('#msg2').popup('open');
 };
 
-function uploadSuccess(response) {
-    var objResponse;
-    objResponse = JSON.parse(response);
+function uploadSuccess(objResponse) {
     $('#reportar').popup('close');
     if (objResponse.message == null) {
         $('#msgTXT2').html('Foto cargada exitosamente.');
@@ -482,9 +611,7 @@ function uploadSuccess(response) {
     $('#msg2').popup('open');
 };
 
-function uploadSuccessFT(response) {
-    var objResponse;
-    objResponse = JSON.parse(response.response);
+function uploadSuccessFT(objResponse) {
     $('#reportar').popup('close');
     if (objResponse.message == null) {
         $('#msgTXT2').html('Foto cargada exitosamente.');
@@ -534,7 +661,7 @@ function enviar_msg() {
 
     var msgURL;
     msgURL = _url_msg + '&categoria=' + $('#fopcion')[0].value + '&Descripcion=' + encodeURIComponent($('#fdescripcion')[0].value)
-                  + '&Latitud=' + currentPoint.x + '&Longitud=' + currentPoint.y + photoMSG
+                  + '&Latitud=' + currentPoint.y + '&Longitud=' + currentPoint.x + photoMSG
                   + '&Telefono=' + encodeURIComponent($('#ftelefono')[0].value) + '&Nombre=' + encodeURIComponent($('#fnombre')[0].value)
                   + '&Correo=' + encodeURIComponent($('#fcorreo')[0].value);
 
@@ -572,4 +699,12 @@ function isPhoneGap() {
     } catch (err) {
         return false;
     }
+}
+
+function count(array, value) {
+    var counter = 0;
+    for (var i = 0; i < array.length; i++) {
+        if (array[i] === value) counter++;
+    }
+    return counter;
 }
