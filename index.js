@@ -173,6 +173,12 @@ function zoomToLocation(position) {
     try {
         currentPoint = new esri.geometry.Point(position.coords.longitude, position.coords.latitude, map.spatialReference);
         map.centerAndZoom(currentPoint, 7);
+
+        gl.add(new esri.Graphic(currentPoint,
+                           new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 13,
+                           new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color("#000000"), 2),
+                           new dojo.Color("#FF0000")),
+                           null, null));
     } catch (ex) {
 
     }
@@ -209,7 +215,7 @@ function mapClickHandler(evt) {
     currentPoint = evt.mapPoint;
     var polygon;
     gl.add(new esri.Graphic(evt.mapPoint,
-                               new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 15,
+                               new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 13,
                                new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color("#000000"), 2),
                                new dojo.Color("#000000")),
                                null, null));
@@ -306,7 +312,7 @@ function showResults(results) {
         switch (results[i].feature.geometry.type) {
             case "point":
                 capa.add(new esri.Graphic(results[i].feature.geometry,
-                                                new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 8,
+                                                new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 13,
                                                                                new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(color_capa), 2),
                                                                                new dojo.Color(color_capa)),
                                                 results[i].feature.attributes,
@@ -315,7 +321,7 @@ function showResults(results) {
                 break;
             case "multipoint":
                 capa.add(new esri.Graphic(results[i].feature.geometry,
-                                                new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 10,
+                                                new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 13,
                                                                                new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(color_capa), 2),
                                                                                new dojo.Color(color_capa)),
                                                 results[i].feature.attributes,
@@ -386,7 +392,7 @@ function showEntidades() {
                     popcontent = new esri.InfoTemplate(value, content)
                 };
                 capa.add(new esri.Graphic(esri.geometry.webMercatorToGeographic(new esri.geometry.Point(_result.geometry.x, _result.geometry.y, new esri.SpatialReference({ wkid: 102100 }))),
-                                                         new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 8,
+                                                         new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 13,
                                                                                         new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(color_capa), 2),
                                                                                         new dojo.Color(color_capa)),
                                                          _result.attributes,
@@ -450,12 +456,12 @@ function showLayer(pos) {
         };        
         switch (capa.graphics[i].geometry.type) {
             case "point":
-                capa.graphics[i].symbol = new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 8,
+                capa.graphics[i].symbol = new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 13,
                                                                                new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(_color), 2),
                                                                                new dojo.Color(_color));
                 break;
             case "multipoint":
-                capa.graphics[i].symbol = new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 10,
+                capa.graphics[i].symbol = new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 13,
                                                                                new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(_color), 2),
                                                                                new dojo.Color(_color));
                 break;
@@ -543,6 +549,9 @@ function isTouchDevice() {
 function capture(sourceType) {
     navigator.camera.getPicture(captureSuccess, captureFail, {
         destinationType: Camera.DestinationType.FILE_URI,
+        quality: 100,
+        targetWidth: 400,
+        targetHeight: 400,
         sourceType: sourceType,
         encodingType: Camera.EncodingType.JPEG
     });
