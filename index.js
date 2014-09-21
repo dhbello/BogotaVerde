@@ -17,7 +17,7 @@ var _service_url = 'http://mapas.catastrobogota.gov.co/arcgis/rest/services/Tema
 // Capas a consultar (asociado con las direcciones de los mapas a consultar)
 var _service_layers = [0];
 // Radio de búsqueda (por defecto)
-var radius = 1;
+var radius = 0.5;
 
 var map;
 var loaded = false;
@@ -41,6 +41,7 @@ var evtParams;
 
 var tipos;
 var cache_data;
+var tcache_data;
 
 function init() {
 
@@ -73,7 +74,7 @@ function init() {
     if (isPhoneGap()) {
 
         map = new esri.Map("map", {
-            zoom: 5,
+            zoom: 7,
             infoWindow: popup,
             autoresize: true
         });
@@ -85,7 +86,7 @@ function init() {
         dojo.connect(map, "onClick", mapClickHandler);
     } else {
         map = new esri.Map("map", {
-            zoom: 5,
+            zoom: 7,
             nav: true,
             infoWindow: popup,
             autoresize: true
@@ -158,7 +159,7 @@ function mapLoadHandler(map) {
     map.addLayer(capa, 1);
 
     currentPoint = new esri.geometry.Point(pLng, pLat, map.spatialReference);
-    map.centerAndZoom(currentPoint, 5);
+    map.centerAndZoom(currentPoint, 7);
 };
 
 function zoomToLocation(position) {
@@ -171,7 +172,7 @@ function zoomToLocation(position) {
 
     try {
         currentPoint = new esri.geometry.Point(position.coords.longitude, position.coords.latitude, map.spatialReference);
-        map.centerAndZoom(currentPoint, 5);
+        map.centerAndZoom(currentPoint, 7);
     } catch (ex) {
 
     }
@@ -287,26 +288,11 @@ function showResults(results) {
     tipos = [];
 
     for (var i = 0, il = results.length; i < il; i++) {
-        var value = "N/A";
+        var value = "Parque";
         var content = "";
 
-        try {
-            if (i % 3 == 0) {
-                value = "abatia parviflora";
-            };
-            if (i % 3 == 1) {
-                value = "abelia sp";
-            };
-            if (i % 3 == 2) {
-                value = "pinus sylvestris";
-            };
-
-            results[i].feature.attributes["Nombre_Esp"] = value;
-            tipos.push(value);
-            content = value;
-        } catch (e) {
-            alert(e);
-        };
+        value = "Parque";
+        content = results[i].feature.attributes["Nombre"];
         content = content + "<br /><a href='#' onclick='cerrarPopup();' style=''>Cerrar</a>";
         var popcontent;
         if (value.length > 40) {
@@ -320,7 +306,7 @@ function showResults(results) {
         switch (results[i].feature.geometry.type) {
             case "point":
                 capa.add(new esri.Graphic(results[i].feature.geometry,
-                                                new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 5,
+                                                new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 8,
                                                                                new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(color_capa), 2),
                                                                                new dojo.Color(color_capa)),
                                                 results[i].feature.attributes,
@@ -363,14 +349,14 @@ function showResults(results) {
                 break;
         }
     }
-    showEntidades();
-    
+    showEntidades();    
 
 };
 
 function showEntidades() {
+    tcache_data = {};
     $.ajax({
-        url: "http://www.arcgis.com/sharing/content/items/3d9aa61707a84d86aa9f61833e7e0d7b/data",
+        url: "http://www.arcgis.com/sharing/content/items/51f35b10bc7e40948ddcd4d0b84e52f3/data",
         type: 'GET',
         dataType: 'json',
         success: function (response) {
@@ -378,13 +364,14 @@ function showEntidades() {
 
             for (var i = 0, il = response.operationalLayers[0].featureCollection.layers[0].featureSet.features.length; i < il; i++) {
                 var _result = response.operationalLayers[0].featureCollection.layers[0].featureSet.features[i];
-                var value = "N/A";
+                var value = "";
                 var content = "";
 
                 try {
-                    value = _result.attributes["Nombre_Esp"];                    
-                    tipos.push(value);
-                    content = value;
+                    tcache_data[_result.attributes["NOMBRE_CIE"]] = _result.attributes["Nombre_Esp"];
+                    value = _result.attributes["Nombre_Esp"];
+                    content = "Codigo: " + _result.attributes["Codigo_Arb"];
+                    tipos.push(_result.attributes["NOMBRE_CIE"]);
                 } catch (e) {
                     alert(e);
                 };
@@ -399,7 +386,7 @@ function showEntidades() {
                     popcontent = new esri.InfoTemplate(value, content)
                 };
                 capa.add(new esri.Graphic(esri.geometry.webMercatorToGeographic(new esri.geometry.Point(_result.geometry.x, _result.geometry.y, new esri.SpatialReference({ wkid: 102100 }))),
-                                                         new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 5,
+                                                         new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 8,
                                                                                         new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(color_capa), 2),
                                                                                         new dojo.Color(color_capa)),
                                                          _result.attributes,
@@ -416,11 +403,11 @@ function showEntidades() {
             var params = "";
             for (var j = 0; j < tipos.length; j++) {
                 strHTML = strHTML + "<tr onclick='showLayer(" + j + ");'  id='linea-" + j + "' class='lineaTR'>";
-                strHTML = strHTML + "<td>";
+                strHTML = strHTML + "<td><span style='margin-right: 10px;'>";
                 strHTML = strHTML + count(tcache, tipos[j]);
-                strHTML = strHTML + "</td>";
+                strHTML = strHTML + "</span></td>";
                 strHTML = strHTML + "<td>";
-                strHTML = strHTML + tipos[j];
+                strHTML = strHTML + tcache_data[tipos[j]];
                 strHTML = strHTML + "</td>";
                 strHTML = strHTML + "<td id='linea-" + j + "-l' style='float: right;'>";
                 strHTML = strHTML + "</td>";
@@ -441,14 +428,14 @@ function showEntidades() {
                     };
                 },
                 error: function (err) {
-                    alert('error');
+                    //alert('error');
                 }
             });
 
 
         },
         error: function (err) {
-            alert('error');
+            //alert('error');
         }
     });
 };
@@ -456,14 +443,14 @@ function showEntidades() {
 function showLayer(pos) {
     for (var i = 0; i < capa.graphics.length; i++) {
         var _color;
-        if (capa.graphics[i].attributes["Nombre_Esp"] == tipos[pos]) {
+        if (capa.graphics[i].attributes["NOMBRE_CIE"] == tipos[pos]) {
             _color = new dojo.Color({ r: 255, g: 0, b: 0, a: 0.45 });
         } else {
             _color = new dojo.Color(color_capa);
         };        
         switch (capa.graphics[i].geometry.type) {
             case "point":
-                capa.graphics[i].symbol = new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 5,
+                capa.graphics[i].symbol = new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_CIRCLE, 8,
                                                                                new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color(_color), 2),
                                                                                new dojo.Color(_color));
                 break;
@@ -514,7 +501,7 @@ function showDetails(pos) {
             $('#info').popup('open');
         },
         error: function (err) {
-            alert('error');
+            //alert('error');
         }
     });
    
