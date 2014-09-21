@@ -608,9 +608,6 @@ function uploadSuccess(objResponse) {
 };
 
 function uploadSuccessFT(response) {
-    alert(response);
-    alert(response.response);
-    alert(JSON.parse(response.response));
     var objResponse;
     objResponse = JSON.parse(response.response);
     $('#reportar').popup('close');
