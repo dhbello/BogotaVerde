@@ -607,7 +607,12 @@ function uploadSuccess(objResponse) {
     $('#msg2').popup('open');
 };
 
-function uploadSuccessFT(objResponse) {
+function uploadSuccessFT(response) {
+    alert(response);
+    alert(response.response);
+    alert(JSON.parse(response.response));
+    var objResponse;
+    objResponse = JSON.parse(response.response);
     $('#reportar').popup('close');
     if (objResponse.message == null) {
         $('#msgTXT2').html('Foto cargada exitosamente.');
